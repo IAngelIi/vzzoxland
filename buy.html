@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vzzoxland | Магазин услуг</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* ДИЗАЙН-СИСТЕМА: DARK MINIMAL 
+        */
+        :root {
+            --bg: #050505;
+            --surface: #0f0f0f;
+            --surface-alt: #161616;
+            --border: #222222;
+            --text-main: #ffffff;
+            --text-muted: #666666;
+            --accent: #ffffff;
+            --star-color: #ffd700;
+            --transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Плавный фон */
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 10% 10%, #111 0%, #050505 50%);
+            z-index: -1;
+        }
+
+        /* НАВИГАЦИЯ */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 70px;
+            padding: 0 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .balance-pill {
+            background: var(--surface-alt);
+            padding: 6px 16px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .balance-pill span {
+            color: var(--star-color);
+            font-weight: 700;
+        }
+
+        /* ГАМБУРГЕР МЕНЮ */
+        .hamburger {
+            margin-left: 20px;
+            cursor: pointer;
+            width: 24px;
+            height: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 100%;
+            height: 1px;
+            background: var(--text-main);
+            transition: var(--transition);
+        }
+
+        .hamburger.active span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+        .hamburger.active span:nth-child(2) { opacity: 0; }
+        .hamburger.active span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 320px;
+            height: 100vh;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            padding: 100px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            transition: var(--transition);
+            z-index: 999;
+        }
+
+        .nav-menu.active { right: 0; }
+
+        .nav-menu a {
+            font-size: 1.4rem;
+            color: var(--text-main);
+            text-decoration: none;
+            opacity: 0.5;
+            transition: var(--transition);
+        }
+
+        .nav-menu a:hover { opacity: 1; transform: translateX(5px); }
+
+        /* КОНТЕНТ */
+        .container {
+            max-width: 1100px;
+            margin: 120px auto 100px;
+            padding: 0 20px;
+        }
+
+        .shop-header {
+            margin-bottom: 60px;
+            text-align: center;
+        }
+
+        .shop-header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .shop-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* ГРИД УСЛУГ */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            border-color: #444;
+            transform: translateY(-5px);
+            background: var(--surface-alt);
+        }
+
+        .card-icon {
+            margin-bottom: 25px;
+            opacity: 0.8;
+        }
+
+        .card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            flex-grow: 1;
+        }
+
+        .price-tag {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .price-tag small {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .order-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .order-btn:hover {
+            background: #ccc;
+        }
+
+        /* МОДАЛЬНОЕ ОКНО */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background: var(--surface);
+            width: 90%;
+            max-width: 450px;
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .modal h2 { margin-bottom: 15px; }
+        .modal p { color: var(--text-muted); margin-bottom: 30px; }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-confirm { background: var(--text-main); color: var(--bg); }
+        .btn-cancel { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
+
+        /* СКРОЛЛ */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+
+        footer {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-overlay"></div>
+
+    <nav>
+        <div class="logo">vzzoxland</div>
+        <div style="display: flex; align-items: center;">
+            <div class="balance-pill" id="userBalance">
+                Загрузка...
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="nav-menu" id="navMenu">
+        <a href="Feed.html">Главная</a>
+        <a href="rates.html">Отзывы</a>
+        <a href="buy.html" style="opacity: 1;">Магазин</a>
+        <a href="admin.html" id="adminLink" style="display: none;">Админ</a>
+        <button id="logoutBtn" style="background: none; border: 1px solid #333; color: #555; padding: 10px; border-radius: 5px; margin-top: auto; cursor: pointer;">Выйти</button>
+    </div>
+
+    <div class="container">
+        <header class="shop-header">
+            <h1>Услуги</h1>
+            <p>Выберите интересующую вас позицию. Оплата производится в Stars.</p>
+        </header>
+
+        <div class="services-grid">
+            <div class="card">
+                <div class="card-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h3>Аватарка</h3>
+                <p>Статичное изображение высокого качества для вашего профиля или соцсетей.</p>
+                <div class="price-tag">15 <span>stars</span></div>
+                <button class="order-btn" onclick="openOrderModal('Аватарка', 15)">Заказать</button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                </div>
+                <h3>Баннер</h3>
+                <p>Оформление шапки для YouTube, Discord или личного сайта.</p>
+                <div class="price-tag">15 <span>stars</span></div>
+                <button class="order-btn" onclick="openOrderModal('Баннер', 15)">Заказать</button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                    </svg>
+                </div>
+                <h3>Аним. баннер</h3>
+                <p>Динамическая обложка с эффектами, привлекающая внимание.</p>
+                <div class="price-tag">30 <span>stars</span></div>
+                <button class="order-btn" onclick="openOrderModal('Анимационный баннер', 30)">Заказать</button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 8v4l3 3"></path>
+                    </svg>
+                </div>
+                <h3>Аним. аватарка</h3>
+                <p>Живое изображение для Discord Nitro или веб-сервисов.</p>
+                <div class="price-tag">30 <span>stars</span></div>
+                <button class="order-btn" onclick="openOrderModal('Анимационная аватарка', 30)">Заказать</button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                </div>
+                <h3>Скрипт (S)</h3>
+                <p>Написание кода любой сложности объемом от 150 до 500 строк.</p>
+                <div class="price-tag">150 <span>stars</span></div>
+                <button class="order-btn" onclick="openOrderModal('Код 150-500 строк', 150)">Заказать</button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <h3>Скрипт (M)</h3>
+                <p>Разработка систем или плагинов объемом от 500 до 1000 строк.</p>
+                <div class="price-tag">200 <span>stars</span></div>
+                <button class="order-btn" onclick="openOrderModal('Код 500-1000 строк', 200)">Заказать</button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                    </svg>
+                </div>
+                <h3>Скрипт (L)</h3>
+                <p>Крупные проекты и комплексные решения (1000 - 10000 строк).</p>
+                <div class="price-tag">500 <span>stars</span></div>
+                <button class="order-btn" onclick="openOrderModal('Код 1000-10000 строк', 500)">Заказать</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2 id="modalTitle">Подтверждение</h2>
+            <p id="modalText">Вы действительно хотите заказать эту услугу?</p>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeModal()">Отмена</button>
+                <button class="modal-btn btn-confirm" id="confirmOrderBtn">Да, заказать</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        vzzoxland shop &copy; 2026. <br>
+        Quality over Quantity.
+    </footer>
+
+    <script>
+        // КОНФИГ SUPABASE
+        const SB_URL = "https://nmpbxqiknjhvyibhzmln.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tcGJ4cWlrbmpodnlpYmh6bWxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTc4MDMsImV4cCI6MjA4OTg3MzgwM30.iH0H-tUnycPzJ93W2Cu_wdOB-Ga4OPEU4IU9BD5NglE";
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        // UI ЭЛЕМЕНТЫ
+        const hamburger = document.getElementById('hamburger');
+        const navMenu = document.getElementById('navMenu');
+        const userBalanceEl = document.getElementById('userBalance');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const confirmOrderBtn = document.getElementById('confirmOrderBtn');
+        
+        let currentOrderData = null;
+
+        // ЛОГИКА МЕНЮ
+        hamburger.onclick = () => {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        };
+
+        // ИНИЦИАЛИЗАЦИЯ
+        async function init() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+
+            if (profile) {
+                userBalanceEl.innerHTML = `Баланс: <span>${profile.stars_balance} stars</span>`;
+                if (profile.role !== 'user') {
+                    document.getElementById('adminLink').style.display = 'block';
+                }
+            }
+        }
+
+        // УПРАВЛЕНИЕ МОДАЛКОЙ
+        window.openOrderModal = (name, price) => {
+            currentOrderData = { name, price };
+            document.getElementById('modalTitle').innerText = name;
+            document.getElementById('modalText').innerText = `С вашего баланса будет списано ${price} stars после одобрения администратором. Продолжить?`;
+            modalOverlay.style.display = 'flex';
+        };
+
+        window.closeModal = () => {
+            modalOverlay.style.display = 'none';
+        };
+
+        // СОЗДАНИЕ ЗАКАЗА
+        confirmOrderBtn.onclick = async () => {
+            if (!currentOrderData) return;
+            
+            confirmOrderBtn.disabled = true;
+            confirmOrderBtn.innerText = "Оформление...";
+
+            const { data: { user } } = await supabaseClient.auth.getUser();
+
+            const { error } = await supabaseClient
+                .from('orders')
+                .insert({
+                    user_id: user.id,
+                    item_name: currentOrderData.name,
+                    price: currentOrderData.price,
+                    status: 'pending'
+                });
+
+            if (error) {
+                alert("Ошибка при создании заказа: " + error.message);
+            } else {
+                alert("Заказ успешно создан! Проверить статус можно в Admin/Help Center (после ответа админа).");
+                closeModal();
+            }
+
+            confirmOrderBtn.disabled = false;
+            confirmOrderBtn.innerText = "Да, заказать";
+        };
+
+        // ВЫХОД
+        document.getElementById('logoutBtn').onclick = async () => {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
+        };
+
+        init();
+    </script>
+</body>
+</html>
