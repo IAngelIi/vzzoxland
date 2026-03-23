@@ -360,149 +360,143 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        /* КОНФИГУРАЦИЯ SUPABASE
-        */
-        const SB_URL = "https://nmpbxqiknjhvyibhzmln.supabase.co";
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tcGJ4cWlrbmpodnlpYmh6bWxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTc4MDMsImV4cCI6MjA4OTg3MzgwM30.iH0H-tUnycPzJ93W2Cu_wdOB-Ga4OPEU4IU9BD5NglE";
+    /* КОНФИГУРАЦИЯ SUPABASE */
+    const SB_URL = "https://nmpbxqiknjhvyibhzmln.supabase.co";
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tcGJ4cWlrbmpodnlpYmh6bWxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTc4MDMsImV4cCI6MjA4OTg3MzgwM30.iH0H-tUnycPzJ93W2Cu_wdOB-Ga4OPEU4IU9BD5NglE";
+    
+    // Исправлено: переименовал константу, чтобы не было конфликта с библиотекой
+    const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+    /* UI ЭЛЕМЕНТЫ */
+    const hamburger = document.getElementById('hamburger');
+    const navMenu = document.getElementById('navMenu');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const formTitle = document.getElementById('formTitle');
+    const formSubtitle = document.getElementById('formSubtitle');
+
+    /* ЛОГИКА ГАМБУРГЕРА (Теперь точно работает) */
+    hamburger.addEventListener('click', () => {
+        hamburger.classList.toggle('active');
+        navMenu.classList.toggle('active');
+    });
+
+    /* ПЕРЕКЛЮЧЕНИЕ ТАБОВ */
+    function switchTab(mode) {
+        if (mode === 'login') {
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+            formTitle.innerText = "Вход";
+            formSubtitle.innerText = "Добро пожаловать обратно в vzzoxland";
+        } else {
+            tabLogin.classList.remove('active');
+            tabRegister.classList.add('active');
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            formTitle.innerText = "Регистрация";
+            formSubtitle.innerText = "Станьте частью сообщества vzzoxland";
+        }
+    }
+
+    tabLogin.addEventListener('click', () => switchTab('login'));
+    tabRegister.addEventListener('click', () => switchTab('register'));
+
+    /* СИСТЕМА УВЕДОМЛЕНИЙ */
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        if (type === 'error') toast.style.borderLeftColor = 'var(--error)';
         
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
+        toast.innerHTML = `
+            <span>${type === 'error' ? '✕' : '✓'}</span>
+            <p>${message}</p>
+        `;
+        
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
 
-        /* UI ЭЛЕМЕНТЫ
-        */
-        const hamburger = document.getElementById('hamburger');
-        const navMenu = document.getElementById('navMenu');
-        const tabLogin = document.getElementById('tabLogin');
-        const tabRegister = document.getElementById('tabRegister');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const formTitle = document.getElementById('formTitle');
-        const formSubtitle = document.getElementById('formSubtitle');
+    /* АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ */
 
-        /* ЛОГИКА ГАМБУРГЕРА
-        */
-        hamburger.onclick = () => {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-        };
+    // 1. Регистрация
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('regBtn');
+        const username = document.getElementById('regUsername').value;
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
 
-        /* ПЕРЕКЛЮЧЕНИЕ ТАБОВ
-        */
-        function switchTab(mode) {
-            if (mode === 'login') {
-                tabLogin.classList.add('active');
-                tabRegister.classList.remove('active');
-                loginForm.classList.remove('hidden');
-                registerForm.classList.add('hidden');
-                formTitle.innerText = "Вход";
-                formSubtitle.innerText = "Добро пожаловать обратно в vzzoxland";
-            } else {
-                tabLogin.classList.remove('active');
-                tabRegister.classList.add('active');
-                loginForm.classList.add('hidden');
-                registerForm.classList.remove('hidden');
-                formTitle.innerText = "Регистрация";
-                formSubtitle.innerText = "Станьте частью сообщества vzzoxland";
-            }
+        btn.disabled = true;
+        btn.innerText = "Обработка...";
+
+        try {
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: { username: username }
+                }
+            });
+
+            if (error) throw error;
+
+            showToast("Регистрация успешна! Входим...");
+            setTimeout(() => window.location.href = 'Feed.html', 1500);
+
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Создать аккаунт";
         }
+    });
 
-        tabLogin.onclick = () => switchTab('login');
-        tabRegister.onclick = () => switchTab('register');
+    // 2. Вход
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn');
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
 
-        /* СИСТЕМА УВЕДОМЛЕНИЙ
-        */
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            if (type === 'error') toast.style.borderLeftColor = 'var(--error)';
-            
-            toast.innerHTML = `
-                <span>${type === 'error' ? '✕' : '✓'}</span>
-                <p>${message}</p>
-            `;
-            
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(() => toast.remove(), 500);
-            }, 4000);
+        btn.disabled = true;
+        btn.innerText = "Проверка...";
+
+        try {
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) throw error;
+
+            showToast("Успешный вход!");
+            setTimeout(() => window.location.href = 'Feed.html', 1000);
+
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Войти в аккаунт";
         }
+    });
 
-        /* АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
-        */
-
-        // 1. Регистрация
-        registerForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('regBtn');
-            const username = document.getElementById('regUsername').value;
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-
-            btn.disabled = true;
-            btn.innerText = "Обработка...";
-
-            try {
-                const { data, error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: { username: username }
-                    }
-                });
-
-                if (error) throw error;
-
-                showToast("Регистрация успешна! Входим...");
-                setTimeout(() => window.location.href = 'Feed.html', 1500);
-
-            } catch (err) {
-                showToast(err.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Создать аккаунт";
-            }
-        };
-
-        // 2. Вход
-        loginForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('loginBtn');
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-
-            btn.disabled = true;
-            btn.innerText = "Проверка...";
-
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password
-                });
-
-                if (error) throw error;
-
-                showToast("Успешный вход!");
-                setTimeout(() => window.location.href = 'Feed.html', 1000);
-
-            } catch (err) {
-                showToast(err.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Войти в аккаунт";
-            }
-        };
-
-        // 3. Проверка текущей сессии
-        async function checkUser() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                window.location.href = 'Feed.html';
-            }
+    // 3. Проверка текущей сессии
+    async function checkUser() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            window.location.href = 'Feed.html';
         }
-        checkUser();
-
-    </script>
+    }
+    checkUser();
+</script>
 </body>
 </html>
