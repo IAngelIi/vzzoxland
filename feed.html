@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vzzoxland | Feed</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* CSS ПЕРЕМЕННЫЕ */
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface-hover: #1c1c1c;
+            --text-primary: #ffffff;
+            --text-secondary: #999999;
+            --accent: #ffffff;
+            --border: #222222;
+            --danger: #ff4444;
+            --transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'SF Pro Display', 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Плавное появление контента */
+        body.loaded {
+            opacity: 1;
+        }
+
+        /* НАВИГАЦИЯ */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .user-stat {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            border-right: 1px solid var(--border);
+            padding-right: 20px;
+        }
+
+        .user-stat span {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ГАМБУРГЕР */
+        .hamburger {
+            width: 24px;
+            height: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .hamburger span {
+            height: 2px;
+            background: var(--text-primary);
+            width: 100%;
+            transition: var(--transition);
+        }
+
+        .hamburger.active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+        .hamburger.active span:nth-child(2) { opacity: 0; }
+        .hamburger.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+        /* МЕНЮ */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 350px;
+            height: 100vh;
+            background: var(--surface);
+            z-index: 999;
+            padding: 100px 40px;
+            transition: var(--transition);
+            border-left: 1px solid var(--border);
+        }
+
+        .side-menu.active { right: 0; }
+
+        .menu-link {
+            display: block;
+            font-size: 2rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            margin-bottom: 25px;
+            font-weight: 700;
+            opacity: 0.4;
+            transition: var(--transition);
+        }
+
+        .menu-link:hover { opacity: 1; transform: translateX(10px); }
+
+        /* ГЛАВНЫЙ КОНТЕНТ */
+        .container {
+            max-width: 1000px;
+            margin: 120px auto 60px;
+            padding: 0 20px;
+        }
+
+        /* СЕКЦИЯ: ОБО МНЕ */
+        .hero {
+            margin-bottom: 100px;
+            animation: slideUp 1s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 40px;
+        }
+
+        /* КАРТОЧКИ НАВЫКОВ */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 100px;
+        }
+
+        .skill-card {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .skill-card:hover {
+            border-color: #444;
+            transform: translateY(-5px);
+        }
+
+        .skill-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .skill-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* ОТЗЫВЫ */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 40px;
+        }
+
+        .section-header h2 {
+            font-size: 2rem;
+        }
+
+        .reviews-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .review-card {
+            background: var(--surface);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .reviewer-name {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .review-date {
+            color: var(--text-secondary);
+        }
+
+        .review-content {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* КНОПКА ВЫХОДА */
+        .logout-btn {
+            background: none;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 50px;
+            transition: var(--transition);
+        }
+
+        .logout-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* SKELETON LOADING */
+        .skeleton {
+            background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+            height: 20px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 0;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            nav { padding: 0 20px; }
+            .side-menu { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">vzzoxland</div>
+        <div class="nav-right">
+            <div class="user-stat" id="userStats">
+                Загрузка...
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="side-menu" id="sideMenu">
+        <a href="Feed.html" class="menu-link" style="opacity: 1;">Главная</a>
+        <a href="rates.html" class="menu-link">Отзывы</a>
+        <a href="buy.html" class="menu-link">Магазин</a>
+        <a href="admin.html" class="menu-link" id="adminLink" style="display: none;">Админ-панель</a>
+        <button class="logout-btn" id="logoutBtn">Выйти из системы</button>
+    </div>
+
+    <div class="container">
+        <section class="hero">
+            <p style="text-transform: uppercase; letter-spacing: 3px; font-size: 0.8rem; margin-bottom: 10px;">Developer & Admin</p>
+            <h1>Привет, я vzzox.</h1>
+            <p>Создаю эффективные решения для Minecraft серверов, занимаюсь фронтенд-разработкой и оптимизацией сложных систем. vzzoxland — это пространство моих услуг и фидбека.</p>
+        </section>
+
+        <div class="skills-grid">
+            <div class="skill-card">
+                <h3>Backend & Optimization</h3>
+                <p>Разработка серверной логики на JavaScript и Java. Оптимизация сущностей и производительности больших миров.</p>
+            </div>
+            <div class="skill-card">
+                <h3>UI/UX Design</h3>
+                <p>Создание минималистичных интерфейсов, где каждая деталь имеет значение. Dark Minimal — мой основной стиль.</p>
+            </div>
+            <div class="skill-card">
+                <h3>Bot & Web Apps</h3>
+                <p>Автоматизация процессов через Telegram ботов и разработка полнофункциональных веб-приложений.</p>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2>Последние отзывы</h2>
+            <a href="rates.html" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem;">Смотреть все →</a>
+        </div>
+
+        <div class="reviews-container" id="reviewsList">
+            <div class="review-card">
+                <div class="skeleton" style="width: 30%;"></div>
+                <div class="skeleton" style="width: 100%; height: 60px; margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        vzzoxland &copy; 2026. <br>
+        Built with Supabase & Passion.
+    </footer>
+
+    <script>
+        // ИНИЦИАЛИЗАЦИЯ SUPABASE
+        const SB_URL = "https://nmpbxqiknjhvyibhzmln.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tcGJ4cWlrbmpodnlpYmh6bWxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTc4MDMsImV4cCI6MjA4OTg3MzgwM30.iH0H-tUnycPzJ93W2Cu_wdOB-Ga4OPEU4IU9BD5NglE";
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        // UI Элементы
+        const hamburger = document.getElementById('hamburger');
+        const sideMenu = document.getElementById('sideMenu');
+        const reviewsList = document.getElementById('reviewsList');
+        const userStats = document.getElementById('userStats');
+        const adminLink = document.getElementById('adminLink');
+
+        // Логика меню
+        hamburger.onclick = () => {
+            hamburger.classList.toggle('active');
+            sideMenu.classList.toggle('active');
+        };
+
+        // Загрузка данных при старте
+        async function init() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Получаем профиль
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+
+            if (profile) {
+                userStats.innerHTML = `${profile.username} | <span>${profile.stars_balance} stars</span>`;
+                // Если роль не пользователь - показываем админку
+                if (profile.role !== 'user') {
+                    adminLink.style.display = 'block';
+                }
+            }
+
+            loadLatestReviews();
+        }
+
+        async function loadLatestReviews() {
+            // Запрос последних 3-х отзывов с именами авторов
+            const { data, error } = await supabaseClient
+                .from('reviews')
+                .select(`
+                    content,
+                    created_at,
+                    profiles ( username )
+                `)
+                .order('created_at', { ascending: false })
+                .limit(3);
+
+            if (error) {
+                reviewsList.innerHTML = "<p>Не удалось загрузить отзывы.</p>";
+                return;
+            }
+
+            if (data.length === 0) {
+                reviewsList.innerHTML = "<p style='color: #666;'>Отзывов пока нет. Будьте первым!</p>";
+                return;
+            }
+
+            reviewsList.innerHTML = "";
+            data.forEach(item => {
+                const date = new Date(item.created_at).toLocaleDateString();
+                const card = document.createElement('div');
+                card.className = 'review-card';
+                card.innerHTML = `
+                    <div class="review-header">
+                        <span class="reviewer-name">@${item.profiles.username}</span>
+                        <span class="review-date">${date}</span>
+                    </div>
+                    <div class="review-content">"${item.content}"</div>
+                `;
+                reviewsList.appendChild(card);
+            });
+        }
+
+        // Выход
+        document.getElementById('logoutBtn').onclick = async () => {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
+        };
+
+        init();
+    </script>
+</body>
+</html>
